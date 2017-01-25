@@ -1,0 +1,33 @@
+#!/bin/bash
+
+
+WORKING_DIR="/var/lib/ddnss/"
+LOG_FILE=/var/log/ddnss-update.log
+. /etc/ddnss/ddnss-update.rc
+
+function logmsg {
+  echo "$CURRENT_DATE - $@" >> $LOGFILE
+}
+
+CURRENT_DATE=`date +%Y-%m-%d\ %H:%M:%S`
+
+IP=`wget -q -O - http://www.ddnss.de/meineip.php| grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'`
+
+
+UPDIP=`cat $WORKING_DIR/last.ip`
+
+logmsg "Current IP=$UPDIP"
+
+if [ "$IP" == "$UPDIP" ]; then
+
+   logmsg "IP is the same - NO UPDATE"
+
+else
+   logmsg "New IP: $ip / Old IP: $UPDIP - UPDATE!"
+
+   echo $IP > $WORKING_DIR/last.ip
+
+   wget -q -O - 'https://www.ddnss.de/upd.php?key='$KEYAUTH'&host='$HOSTNAME >> $LOG_FILE
+
+   echo "Update ... ($IP)"
+fi
