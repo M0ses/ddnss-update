@@ -22,7 +22,7 @@ License:	GPL
 Summary:	Update script for ddnss.de
 Url:		https://github.com/M0ses/ddnss-update
 Group:		Productivity/Networking/DNS/Utilities
-Source:		%{name}-%{version}.tar.gz
+Source:		%{name}-%{version}.tar.xz
 #Patch:
 #BuildRequires:
 #PreReq:
