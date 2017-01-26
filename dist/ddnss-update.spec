@@ -50,7 +50,7 @@ id ddnss || useradd -m -h /var/lib/ddnss -c "User for updating ddnss.de records"
 
 %files
 %defattr(-,root,root)
-%doc ChangeLog README COPYING
+%doc README.md LICENSE
 %config (noreplace) /etc/ddnss/ddnss-update.rc
 /usr/bin/ddnss-update
 %ghost /var/lib/ddnss
