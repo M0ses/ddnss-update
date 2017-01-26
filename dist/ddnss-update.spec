@@ -54,4 +54,5 @@ id ddnss || useradd -m -h /var/lib/ddnss -c "User for updating ddnss.de records"
 %config (noreplace) /etc/ddnss/ddnss-update.rc
 /usr/bin/ddnss-update
 %ghost /var/lib/ddnss
+%dir /etc/ddnss/
 
