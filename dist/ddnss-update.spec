@@ -42,7 +42,7 @@ update script for ddnss.de
 make install DESTDIR=%{buildroot} %{?_smp_mflags}
 
 %pre
-id ddnss || useradd -m -h /var/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
+id ddnss 2>/dev/null || useradd -m -d /var/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
 
 %post
 
