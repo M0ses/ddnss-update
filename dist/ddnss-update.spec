@@ -52,6 +52,7 @@ id ddnss 2>/dev/null || useradd -m -d /var/lib/ddnss -c "User for updating ddnss
 %defattr(-,root,root)
 %doc README.md LICENSE
 %config (noreplace) /etc/ddnss/ddnss-update.rc
+%config (noreplace) /etc/cron.d/ddnss-update
 /usr/bin/ddnss-update
 %ghost /var/lib/ddnss
 %dir /etc/ddnss/
