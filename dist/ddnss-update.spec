@@ -57,7 +57,7 @@ id ddnss 2>/dev/null || useradd -m -d /var/lib/ddnss -c "User for updating ddnss
 %config (noreplace) /etc/cron.d/ddnss-update
 /usr/bin/ddnss-update
 %ghost /var/lib/ddnss
-%ghost(644,ddnss,users) /var/log/ddnss-update.log
-%ghost(644,ddnss,users) /var/lib/ddnss//last.ip
+%ghost /var/log/ddnss-update.log
+%ghost /var/lib/ddnss/last.ip
 %dir /etc/ddnss/
 
