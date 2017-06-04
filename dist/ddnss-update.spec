@@ -29,6 +29,8 @@ Source:		%{name}-%{version}.tar.xz
 #Provides:
 Requires:	curl
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+#BuildRequires: shadow
+Requires: shadow
 
 %description
 update script for ddnss.de 
