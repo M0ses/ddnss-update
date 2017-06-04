@@ -44,7 +44,7 @@ update script for ddnss.de
 make install DESTDIR=%{buildroot} %{?_smp_mflags}
 
 %pre
-id ddnss 2>/dev/null || useradd -m -d /var/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
+id ddnss 2>/dev/null || useradd -r -m -d /var/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
 
 %post
 
@@ -57,7 +57,7 @@ id ddnss 2>/dev/null || useradd -m -d /var/lib/ddnss -c "User for updating ddnss
 %config (noreplace) /etc/cron.d/ddnss-update
 /usr/bin/ddnss-update
 %ghost /var/lib/ddnss
-%ghost /var/log/ddnss-update.log
 %ghost /var/lib/ddnss/last.ip
+%ghost /var/log/ddnss-update.log
 %dir /etc/ddnss/
 
