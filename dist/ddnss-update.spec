@@ -29,7 +29,7 @@ Source:		%{name}-%{version}.tar.xz
 #Provides:
 Requires:	curl
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-#BuildRequires: shadow
+BuildRequires: shadow
 Requires: shadow
 
 %description
