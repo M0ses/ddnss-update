@@ -53,11 +53,11 @@ id ddnss 2>/dev/null || useradd -r -m -d /var/lib/ddnss -c "User for updating dd
 %files
 %defattr(-,root,root)
 %doc README.md LICENSE
+%dir /etc/ddnss/
 %config (noreplace) /etc/ddnss/ddnss-update.rc
 %config (noreplace) /etc/cron.d/ddnss-update
 /usr/bin/ddnss-update
-%ghost /var/lib/ddnss
+%dir %attr(0755,ddnss,users) %ghost /var/lib/ddnss
 %ghost /var/lib/ddnss/last.ip
 %ghost /var/log/ddnss-update.log
-%dir /etc/ddnss/
 
