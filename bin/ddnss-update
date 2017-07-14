@@ -5,6 +5,10 @@ WORKING_DIR="/var/lib/ddnss/"
 LOG_FILE=/var/log/ddnss-update.log
 . /etc/ddnss/ddnss-update.rc
 
+if [ -z "$FORCE_UPDATE" ];then
+  FORCE_UPDATE=86400
+fi
+
 function logmsg {
   echo "$CURRENT_DATE - $@" >> $LOG_FILE
 }
@@ -20,7 +24,18 @@ UPDIP6=`cat $WORKING_DIR/last.ip6 2>/dev/null||echo -en ''`
 logmsg "Current IP=$UPDIP"
 logmsg "Current IP=$UPDIP6"
 
-if [ "$IP" == "$UPDIP" -a "$IP6" == "$UPDIP6" ]; then
+NOW=`date +%s`
+LAST_UPDATE=`stat -c %Y $WORKING_DIR/last.ip`
+NEXT_UPDATE=$(( $LAST_UPDATE + $FORCE_UPDATE ))
+
+[ $NOW -lt $NEXT_UPDATE ]
+UPDATE_NOW=$?
+
+[ "$IP" == "$UPDIP" -a "$IP6" == "$UPDIP6" ]
+IP_SAME=$?
+
+
+if [ $IP_SAME == 0 -a $UPDATE_NOW == 0 ]; then
 
    logmsg "IP is the same - NO UPDATE"
 
