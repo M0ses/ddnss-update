@@ -31,6 +31,8 @@ Requires:	curl
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires: shadow
 Requires: shadow
+BuildRequires: systemd-rpm-macros
+%{?systemd_requires}
 
 %description
 update script for ddnss.de 
@@ -45,19 +47,25 @@ make install DESTDIR=%{buildroot} %{?_smp_mflags}
 
 %pre
 id ddnss 2>/dev/null || useradd -r -m -d /var/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
+%service_add_pre ddnss-update.timer
 
 %post
+%service_add_post ddnss-update.timer
+
+%preun
+%service_del_preun ddnss-update.timer
 
 %postun
+%service_del_postun ddnss-update.timer
 
 %files
 %defattr(-,root,root)
 %doc README.md LICENSE
 %dir /etc/ddnss/
 %config (noreplace) /etc/ddnss/ddnss-update.rc
-%config (noreplace) /etc/cron.d/ddnss-update
 /usr/bin/ddnss-update
 %dir %attr(0755,ddnss,users) %ghost /var/lib/ddnss
 %ghost /var/lib/ddnss/last.ip
 %ghost /var/log/ddnss-update.log
-
+%{_unitdir}/ddnss-update.service
+%{_unitdir}/ddnss-update.timer

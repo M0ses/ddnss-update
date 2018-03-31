@@ -1,0 +1,7 @@
+[Unit]
+Description=ddnss automatic update
+
+[Service]
+User=ddnss
+Type=oneshot
+ExecStart=/usr/bin/ddnss-update

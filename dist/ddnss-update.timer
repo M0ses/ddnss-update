@@ -1,0 +1,9 @@
+[Unit]
+Description=ddnss automatic update
+
+[Timer]
+OnBootSec=1m
+OnUnitInactiveSec=1m
+
+[Install]
+WantedBy=basic.target
