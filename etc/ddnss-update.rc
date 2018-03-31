@@ -1,2 +1,8 @@
 KEYAUTH=""
 HOSTNAME=""
+
+# Some providers do not assign new ipaddresses
+# on a regular base.
+# This is the maximum time in seconds to
+# force an update, even if there was no change.
+FORCE_UPDATE=86400
