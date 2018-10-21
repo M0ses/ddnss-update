@@ -1,7 +1,7 @@
 PREFIX=$(DESTDIR)/usr
 INSTALL=/usr/bin/install
 SYSTEMD_DIR ?= /usr/lib/systemd/system
-LOG_DIR=/var/log/ddnss
+LOGDIR=/var/log/ddnss
 install:
 	[ -d $(PREFIX)/bin ] || mkdir -p $(PREFIX)/bin
 	[ -d $(DESTDIR)/etc/ddnss ] || mkdir -p $(DESTDIR)/etc/ddnss
