@@ -2,7 +2,7 @@
 
 
 WORKING_DIR="/var/lib/ddnss/"
-LOG_FILE=/var/log/ddnss-update.log
+LOG_FILE=/var/log/ddnss/ddnss-update.log
 . /etc/ddnss/ddnss-update.rc
 
 if [ -z "$FORCE_UPDATE" ];then

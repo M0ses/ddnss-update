@@ -66,6 +66,7 @@ id ddnss 2>/dev/null || useradd -r -m -d /var/lib/ddnss -c "User for updating dd
 /usr/bin/ddnss-update
 %dir %attr(0755,ddnss,users) %ghost /var/lib/ddnss
 %ghost /var/lib/ddnss/last.ip
-%ghost /var/log/ddnss-update.log
+%dir %attr(0755,ddnss,users) /var/log/ddnss
+%ghost /var/log/ddnss/ddnss-update.log
 %{_unitdir}/ddnss-update.service
 %{_unitdir}/ddnss-update.timer
