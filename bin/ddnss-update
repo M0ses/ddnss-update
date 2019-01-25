@@ -15,8 +15,8 @@ function logmsg {
 
 CURRENT_DATE=`date +%Y-%m-%d\ %H:%M:%S`
 
-IP6=`curl http://www.ddnss.de/meineip.php 2>/dev/null| grep -o '[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}'`
-IP=`curl http://217.79.184.12/meineip.php 2>/dev/null| grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'`
+IP6=`curl https://ip6.ddnss.de/meineip.php 2>/dev/null| grep -o '[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}'`
+IP=`curl https://ip4.ddnss.de/meineip.php 2>/dev/null| grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'`
 
 UPDIP=`cat $WORKING_DIR/last.ip 2>/dev/null||echo -en ''`
 UPDIP6=`cat $WORKING_DIR/last.ip6 2>/dev/null||echo -en ''`
