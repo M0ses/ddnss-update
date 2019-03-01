@@ -46,7 +46,7 @@ else
    echo $IP > $WORKING_DIR/last.ip
    echo $IP6 > $WORKING_DIR/last.ip6
 
-   wget -q -O - 'https://ddnss.de/upd.php?key='$KEYAUTH'&host='$HOSTNAME'&ip='$IP'&ip6='$IP6 >> $LOG_FILE
+   curl 'https://ddnss.de/upd.php?key='$KEYAUTH'&host='$HOSTNAME'&ip='$IP'&ip6='$IP6 >> $LOG_FILE
 
    echo "Update ... ($IP)"
    echo "Update ... ($IP6)"
