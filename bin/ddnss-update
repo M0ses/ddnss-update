@@ -3,6 +3,10 @@
 
 WORKING_DIR="/var/lib/ddnss/"
 LOG_FILE=/var/log/ddnss/ddnss-update.log
+
+# set default loglevel
+LOGLEVEL=3
+
 . /etc/ddnss/ddnss-update.rc
 
 if [ -z "$FORCE_UPDATE" ];then
@@ -10,7 +14,9 @@ if [ -z "$FORCE_UPDATE" ];then
 fi
 
 function logmsg {
-  echo "$CURRENT_DATE - $@" >> $LOG_FILE
+  LL=$1
+  shift
+  [ "$LL" -le "$LOGLEVEL" ] && echo "$CURRENT_DATE - $@" >> $LOG_FILE
 }
 
 CURRENT_DATE=`date +%Y-%m-%d\ %H:%M:%S`
@@ -21,8 +27,8 @@ IP=`curl https://ip4.ddnss.de/meineip.php 2>/dev/null| grep -o '[0-9]\{1,3\}\.[0
 UPDIP=`cat $WORKING_DIR/last.ip 2>/dev/null||echo -en ''`
 UPDIP6=`cat $WORKING_DIR/last.ip6 2>/dev/null||echo -en ''`
 
-logmsg "Current IP=$UPDIP"
-logmsg "Current IP=$UPDIP6"
+logmsg 5 "Current IP=$UPDIP"
+logmsg 5 "Current IP=$UPDIP6"
 
 NOW=`date +%s`
 LAST_UPDATE=`stat -c %Y $WORKING_DIR/last.ip`
@@ -37,17 +43,21 @@ IP_SAME=$?
 
 if [ $IP_SAME == 0 -a $UPDATE_NOW == 0 ]; then
 
-   logmsg "IP is the same - NO UPDATE"
+   logmsg 4 "IP is the same - NO UPDATE"
 
 else
-   logmsg "New IP: $IP / Old IP: $UPDIP - UPDATE!"
-   logmsg "New IP6: $IP6 / Old IP6: $UPDIP6 - UPDATE!"
+   logmsg 5 "New IP: $IP / Old IP: $UPDIP - UPDATE!"
+   logmsg 5 "New IP6: $IP6 / Old IP6: $UPDIP6 - UPDATE!"
 
    echo $IP > $WORKING_DIR/last.ip
    echo $IP6 > $WORKING_DIR/last.ip6
-
-   curl 'https://ddnss.de/upd.php?key='$KEYAUTH'&host='$HOSTNAME'&ip='$IP'&ip6='$IP6 >> $LOG_FILE
-
-   echo "Update ... ($IP)"
-   echo "Update ... ($IP6)"
+   CMD="curl -v https://ddnss.de/upd.php?key=$KEYAUTH&host=$HOSTNAME&ip=$IP&ip6=$IP6"
+   logmsg 5 "COMMAND: $CMD"
+   HTTP=`$CMD 2>&1`
+   FOUND=`echo "$HTTP"|grep "DDNSS-Response: good"`
+   if [ -n "$FOUND" ];then
+     logmsg 4 "Update ... (IPv4=$IP/IPv6=$IP6)"
+   else
+     logmsg 1 "Something went wrong: $HTTP"
+   fi
 fi
