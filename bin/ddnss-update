@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use POSIX qw/strftime/;
 use LWP::UserAgent;
-use Data::Dumper;
 use Config::General;
 use Getopt::Long;
 use File::Basename;
@@ -82,7 +81,6 @@ exit 0;
 sub update_ddnss_records {
   my ($config, $curr_ips) = @_;
   my $url = "$config->{UPDATE_URL}?key=$config->{KEYAUTH}&host=$config->{HOSTNAME}";
-  print Dumper($curr_ips);
   $url = "$url&ip=$curr_ips->{ipv4}"  if $curr_ips->{ipv4};
   $url = "$url&ip6=$curr_ips->{ipv4}" if $curr_ips->{ipv6};
   my $ua = LWP::UserAgent->new;
