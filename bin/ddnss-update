@@ -33,6 +33,15 @@ my $config   = {
   %{$cfg},
 };
 
+our $logfile;
+
+if ($config->{LOG_FILE}) {
+  open($logfile, '>>', $config->{LOG_FILE})
+    || die "Could not open logfile '$config->{LOG_FILE}': $!\n";
+} else {
+  $logfile = \*STDERR;
+}
+
 # Check Configuration parameters
 ## Check if at least 1 ip version is enabled
 if ($config->{SKIP_IPV4} && $config->{SKIP_IPV6}) {
@@ -71,6 +80,7 @@ if($reason) {
   logmsg("No update needed", 4);
 }
 
+close $logfile || die "Could not close filehandle '$logfile': $!\n";
 exit 0;
 
 ###############################################################################
@@ -113,7 +123,7 @@ sub update_needed {
       logmsg("ERROR: IPv4 configured but no IP found", 1);
     }
   }
- 
+
   if (!$config->{SKIP_IPV6}) {
     if ($curr_ips->{ipv6}) {
       if ($curr_ips->{ipv6} ne ($last_ips->{ipv6} || q{})) {
@@ -123,7 +133,7 @@ sub update_needed {
     } else {
       logmsg("ERROR: IPv6 configured but no IP found", 1);
     }
-  } 
+  }
 
   my $oldest_write = get_oldest_write($config);
   logmsg("Found oldest write: $oldest_write (epoch)", 5);
@@ -172,7 +182,7 @@ sub logmsg {
   chomp($msg);
   my $date = strftime('%Y-%m-%d %H:%M:%S', localtime());
   my @states = qw(ERROR WARNING NOTICE INFO DEBUG);
-  printf "[%s] %-7s - %s\n", $date, $states[$loglevel-1], $msg;
+  printf $logfile "[%s] %-7s - %s\n", $date, $states[$loglevel-1], $msg;
 }
 
 sub get_curr_ip {
@@ -182,7 +192,7 @@ sub get_curr_ip {
 
   my $ua    = LWP::UserAgent->new;
   my $req   = HTTP::Request->new(GET=>$url);
- 
+
   my $res = $ua->request($req);
   if ($res->is_success) {
     for my $l (split(/\n/, $res->decoded_content)) {
