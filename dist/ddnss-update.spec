@@ -32,6 +32,8 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires: shadow
 Requires: shadow
 BuildRequires: systemd-rpm-macros
+Requires: perl(Config::General)
+Requires: perl(LWP::UserAgent)
 %{?systemd_requires}
 
 %description
