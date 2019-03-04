@@ -11,7 +11,7 @@ use File::Basename;
 my %defaults = (
   WORKING_DIR   => "/var/lib/ddnss",
   LOG_FILE      => "/var/log/ddnss/ddnss-update.log",
-  LOGLEVEL      => 5,
+  LOGLEVEL      => 3,
   FORCE_UPDATE  => 86400,
   IPV4_URL      => 'https://ip4.ddnss.de/meineip.php',
   IPV6_URL      => 'https://ip6.ddnss.de/meineip.php',
@@ -102,7 +102,6 @@ sub update_ddnss_records {
       set_last_ip('6', $curr_ips->{ipv6}) if (!$config->{SKIP_IPV6} && $curr_ips->{ipv6});
     } else {
       logmsg("An error occured while updating. DDNSS-Message: ".$response->header("DDNSS-Message"), 1);
-      print $response->as_string();
     }
   } else {
     logmsg("HTTP Error: ".$response->status_line, 1);
