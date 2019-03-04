@@ -1,16 +1,37 @@
+#### *** REQUIRED SETTINGS ***
 KEYAUTH=""
 HOSTNAME=""
 
+#### *** RECOMMENDED SETTINGS ***
+### ENABLE/DISABLE IP by VERSION
+# SKIP_IPV4=0
+# SKIP_IPV6=0
+
+#### *** OPTIONAL SETTINGS ***
+### FORCE_UPDATE
 # Some providers do not assign new ipaddresses
 # on a regular base.
 # This is the maximum time in seconds to
 # force an update, even if there was no change.
-FORCE_UPDATE=86400
-
+#
+# FORCE_UPDATE=86400
+#
 ### LOGLEVEL
 # 1 - LOG_ERR        error conditions
 # 2 - LOG_WARNING    warning conditions
 # 3 - LOG_NOTICE     normal, but significant, condition
 # 4 - LOG_INFO       informational message
 # 5 - LOG_DEBUG      debug-level message
+#
 # LOGLEVEL=3
+#
+### FILES AND DIRECTORIES
+#
+# WORKING_DIR=/var/lib/ddnss
+# LOG_FILE=/var/log/ddnss/ddnss-update.log
+#
+### DEFAULT URL's
+# 
+# IPV4_URL=https://ip4.ddnss.de/meineip.php
+# IPV6_URL=https://ip6.ddnss.de/meineip.php
+# UPDATE_URL=https://ddnss.de/upd.php
