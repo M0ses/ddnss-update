@@ -63,7 +63,6 @@ $last_ips->{ipv4} = get_last_ip('4') if !$config->{SKIP_IPV4};
 $last_ips->{ipv6} = get_last_ip('6') if !$config->{SKIP_IPV6};
 
 my $reason = update_needed($curr_ips, $last_ips, $config);
-logmsg("Reason: $reason", 3);
 
 if($reason) {
   logmsg("Update needed, reason: $reason", 3);
