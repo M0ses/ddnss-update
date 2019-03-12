@@ -1,63 +1,238 @@
-#!/bin/bash
+#!/usr/bin/perl
 
+use strict;
+use warnings;
+use POSIX qw/strftime/;
+use LWP::UserAgent;
+use Config::General;
+use Getopt::Long;
+use File::Basename;
 
-WORKING_DIR="/var/lib/ddnss/"
-LOG_FILE=/var/log/ddnss/ddnss-update.log
+my %defaults = (
+  WORKING_DIR   => "/var/lib/ddnss",
+  LOG_FILE      => "/var/log/ddnss/ddnss-update.log",
+  LOGLEVEL      => 3,
+  FORCE_UPDATE  => 86400,
+  IPV4_URL      => 'https://ip4.ddnss.de/meineip.php',
+  IPV6_URL      => 'https://ip6.ddnss.de/meineip.php',
+  SKIP_IPV4     => 0,
+  SKIP_IPV6     => 0,
+  CONFIG_FILE   => '/etc/ddnss/ddnss-update.rc',
+  UPDATE_URL    => 'https://ddnss.de/upd.php',
+);
 
-# set default loglevel
-LOGLEVEL=3
+my $cfile;
+my $basename = basename($0);
+GetOptions ("c=s" => \$cfile) ||
+  die "Usage: $basename [-c /path/to/config_file]\n";
 
-. /etc/ddnss/ddnss-update.rc
+my $cfg_file = $cfile || $defaults{CONFIG_FILE};
+my $cfg      = Config::General->new($cfg_file)->{config};
+my $config   = {
+  %defaults,
+  %{$cfg},
+};
 
-if [ -z "$FORCE_UPDATE" ];then
-  FORCE_UPDATE=86400
-fi
+our $logfile;
 
-function logmsg {
-  LL=$1
-  shift
-  [ "$LL" -le "$LOGLEVEL" ] && echo "$CURRENT_DATE - $@" >> $LOG_FILE
+if ($config->{LOG_FILE}) {
+  open($logfile, '>>', $config->{LOG_FILE})
+    || die "Could not open logfile '$config->{LOG_FILE}': $!\n";
+} else {
+  $logfile = \*STDERR;
 }
 
-CURRENT_DATE=`date +%Y-%m-%d\ %H:%M:%S`
+# Check Configuration parameters
+## Check if at least 1 ip version is enabled
+if ($config->{SKIP_IPV4} && $config->{SKIP_IPV6}) {
+  my $msg = "Both IP versions disabled. Please check your configuration!";
+  logmsg($msg, 1);
+  die("$msg\n");
+}
+## Check if hostname is set
+if (!$config->{HOSTNAME}) {
+  my $msg = "Please set parameter 'HOSTNAME' in your configuration!";
+  logmsg($msg, 1);
+  die("$msg\n");
+}
+## Check if authentication key is set
+if (!$config->{KEYAUTH}) {
+  my $msg = "Please set parameter 'KEYAUTH' in your configuration!";
+  logmsg($msg, 1);
+  die("$msg\n");
+}
+# END -Check Configuration parameters
 
-IP6=`curl https://ip6.ddnss.de/meineip.php 2>/dev/null| grep -o '[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}\:[0-9a-z]\{1,4\}'`
-IP=`curl https://ip4.ddnss.de/meineip.php 2>/dev/null| grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'`
+my $curr_ips = {};
+$curr_ips->{ipv4} = get_curr_ip($config->{IPV4_URL}) if !$config->{SKIP_IPV4};
+$curr_ips->{ipv6} = get_curr_ip($config->{IPV6_URL}) if !$config->{SKIP_IPV6};
 
-UPDIP=`cat $WORKING_DIR/last.ip 2>/dev/null||echo -en ''`
-UPDIP6=`cat $WORKING_DIR/last.ip6 2>/dev/null||echo -en ''`
+my $last_ips = {};
+$last_ips->{ipv4} = get_last_ip('4') if !$config->{SKIP_IPV4};
+$last_ips->{ipv6} = get_last_ip('6') if !$config->{SKIP_IPV6};
 
-logmsg 5 "Current IP=$UPDIP"
-logmsg 5 "Current IP=$UPDIP6"
+my $reason = update_needed($curr_ips, $last_ips, $config);
 
-NOW=`date +%s`
-LAST_UPDATE=`stat -c %Y $WORKING_DIR/last.ip`
-NEXT_UPDATE=$(( $LAST_UPDATE + $FORCE_UPDATE ))
+if($reason) {
+  logmsg("Update needed, reason: $reason", 3);
+  update_ddnss_records($config, $curr_ips);
+} else {
+  logmsg("No update needed", 4);
+}
 
-[ $NOW -lt $NEXT_UPDATE ]
-UPDATE_NOW=$?
+close $logfile || die "Could not close filehandle '$logfile': $!\n";
+exit 0;
 
-[ "$IP" == "$UPDIP" -a "$IP6" == "$UPDIP6" ]
-IP_SAME=$?
+###############################################################################
+# Subroutines
+###############################################################################
 
+sub update_ddnss_records {
+  my ($config, $curr_ips) = @_;
+  my $url = "$config->{UPDATE_URL}?key=$config->{KEYAUTH}&host=$config->{HOSTNAME}";
+  $url = "$url&ip=$curr_ips->{ipv4}"  if $curr_ips->{ipv4};
+  $url = "$url&ip6=$curr_ips->{ipv4}" if $curr_ips->{ipv6};
+  my $ua = LWP::UserAgent->new;
+  logmsg("Using URL to UPDATE: '$url'", 5);
+  my $response = $ua->get($url);
+  if ($response->is_success) {
+    if (($response->header('DDNSS-Response') || '') eq 'good') {
+      logmsg("Updated successfully. Storing new IP's", 4);
+      set_last_ip('4', $curr_ips->{ipv4}) if (!$config->{SKIP_IPV4} && $curr_ips->{ipv4});
+      set_last_ip('6', $curr_ips->{ipv6}) if (!$config->{SKIP_IPV6} && $curr_ips->{ipv6});
+    } else {
+      logmsg("An error occured while updating. DDNSS-Message: ".$response->header("DDNSS-Message"), 1);
+    }
+  } else {
+    logmsg("HTTP Error: ".$response->status_line, 1);
+  }
+}
 
-if [ $IP_SAME == 0 -a $UPDATE_NOW == 0 ]; then
+sub update_needed {
+  my ($curr_ips, $last_ips, $config) = @_;
 
-   logmsg 4 "IP is the same - NO UPDATE"
+  my $reason = 0;
+  if (!$config->{SKIP_IPV4}) {
+    if ($curr_ips->{ipv4}) {
+      if ($curr_ips->{ipv4} ne ($last_ips->{ipv4} || q{})) {
+	logmsg("Current and last IPv4 address differ. Update needed", 4);
+	$reason |= 1;
+      }
+    } else {
+      logmsg("ERROR: IPv4 configured but no IP found", 1);
+    }
+  }
 
-else
-   logmsg 5 "New IP: $IP / Old IP: $UPDIP - UPDATE!"
-   logmsg 5 "New IP6: $IP6 / Old IP6: $UPDIP6 - UPDATE!"
+  if (!$config->{SKIP_IPV6}) {
+    if ($curr_ips->{ipv6}) {
+      if ($curr_ips->{ipv6} ne ($last_ips->{ipv6} || q{})) {
+	logmsg("Current and last IPv6 address differ. Update needed", 4);
+	$reason |= 2;
+      }
+    } else {
+      logmsg("ERROR: IPv6 configured but no IP found", 1);
+    }
+  }
 
-   echo $IP > $WORKING_DIR/last.ip
-   echo $IP6 > $WORKING_DIR/last.ip6
-   CMD="curl -v https://ddnss.de/upd.php?key=$KEYAUTH&host=$HOSTNAME&ip=$IP&ip6=$IP6"
-   logmsg 5 "COMMAND: $CMD"
-   HTTP=`$CMD 2>&1`
-   FOUND=`echo "$HTTP"|grep "DDNSS-Response: good"`
-   if [ -n "$FOUND" ];then
-     logmsg 4 "Update ... (IPv4=$IP/IPv6=$IP6)"
-   else
-     logmsg 1 "Something went wrong: $HTTP"
-   fi
-fi
+  my $oldest_write = get_oldest_write($config);
+  logmsg("Found oldest write: $oldest_write (epoch)", 5);
+
+  my $now = time();
+  my $update_needed = $oldest_write + $config->{FORCE_UPDATE};
+  if ($update_needed < $now) {
+    logmsg("Update is needed ($update_needed < $now)", 5);
+    $reason |= 4;
+  }
+
+  return $reason;
+}
+
+sub get_oldest_write {
+  my ($config) = @_;
+  my @mtime;
+  if (!$config->{SKIP_IPV4}) {
+    my $file = "$config->{WORKING_DIR}/lastip.v4";
+    my @s = stat $file;
+    if (@s) {
+      push @mtime, $s[9];
+      logmsg("Found mtime for file $file: $s[9]", 5);
+    } else {
+      logmsg("stat on $file failed: $!", 2);
+    }
+  }
+
+  if (!($config->{SKIP_IPV6})) {
+    my $file = "$config->{WORKING_DIR}/lastip.v6";
+    my @s = stat $file;
+    if (@s) {
+      push @mtime, $s[9];
+      logmsg("Found mtime for file", 5);
+    } else {
+      logmsg("stat on $file failed: $!", 2);
+    }
+  }
+
+  return [sort @mtime]->[0] || 0;
+}
+
+sub logmsg {
+  my ($msg, $loglevel) = @_;
+  return if ($loglevel > $config->{LOGLEVEL});
+  chomp($msg);
+  my $date = strftime('%Y-%m-%d %H:%M:%S', localtime());
+  my @states = qw(ERROR WARNING NOTICE INFO DEBUG);
+  printf $logfile "[%s] %-7s - %s\n", $date, $states[$loglevel-1], $msg;
+}
+
+sub get_curr_ip {
+  my ($url) = @_;
+
+  logmsg("Using URL '$url' to find IP.", 5);
+
+  my $ua    = LWP::UserAgent->new;
+  my $req   = HTTP::Request->new(GET=>$url);
+
+  my $res = $ua->request($req);
+  if ($res->is_success) {
+    for my $l (split(/\n/, $res->decoded_content)) {
+      if ($l =~ /^Aktuelle IP: <b>(.*)<\/b>/) {
+        logmsg("Found IP: $1", 5);
+        return $1;
+      }
+    }
+  } else {
+    logmsg("ERROR: " . $res->status_line() . "\n", 1);
+  }
+
+  return;
+}
+
+sub get_last_ip {
+  my ($version) = @_;
+  my $file = "$config->{WORKING_DIR}/lastip.v$version";
+  my $fh;
+  if (!open($fh, '<', $file)) {
+    logmsg("Could not open '$file': $!", 2);
+    return;
+  }
+  my @lines = <$fh>;
+  close $fh || logmsg("Could not close '$file': $!", 1);
+  my $ip = $lines[0] || '';
+  logmsg("Found last IP for IPv$version: $ip", 5);
+  return $ip;
+}
+
+sub set_last_ip {
+  my ($version, $ip) = @_;
+  my $file = "$config->{WORKING_DIR}/lastip.v$version";
+  my $fh;
+  if (!open($fh, '>', $file)) {
+    logmsg("Could not open '$file': $!", 2);
+    return;
+  }
+  print $fh $ip;
+  close $fh || logmsg("Could not close '$file': $!", 1);
+  return;
+}
+
+1;
