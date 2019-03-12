@@ -34,6 +34,7 @@ Requires: shadow
 BuildRequires: systemd-rpm-macros
 Requires: perl(Config::General)
 Requires: perl(LWP::UserAgent)
+Requires: perl(LWP::Protocol::https)
 %{?systemd_requires}
 
 %description

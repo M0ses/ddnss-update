@@ -1,0 +1,53 @@
+#
+Kanku::Util::IPTables:
+  start_port: 49001
+
+
+domain_name: ddnss-update
+default_job: kanku-job
+login_user: root
+login_pass: kankudai
+
+qemu:
+  user:
+
+jobs:
+ kanku-job:
+  -
+    use_module: Kanku::Handler::SetJobContext
+    options:
+      host_interface: eth0
+  -
+    use_module: Kanku::Handler::OBSCheck
+    options:
+      api_url: https://api.opensuse.org/public
+      # Please have a look at
+      # https://build.opensuse.org/project/show/devel:kanku:images
+      # to find more official Images
+      project: devel:kanku:images
+      repository: images_leap_15_0
+      package: openSUSE-Leap-15.0-JeOS
+      use_oscrc: 0
+  -
+    use_module: Kanku::Handler::ImageDownload
+    options:
+      use_cache: 1
+
+  -
+    use_module: Kanku::Handler::CreateDomain
+    options:
+      memory: 2097152
+      vcpu: 2
+      use_9p: 1
+      #forward_port_list: tcp:22,tcp:443
+  -
+    use_module: Kanku::Handler::PrepareSSH
+  -
+    use_module: Kanku::Handler::ExecuteCommandViaSSH
+    options:
+      commands:
+        - zypper ref -s
+        - zypper -n up
+        - zypper -n in make perl-Config-General perl-libwww-perl perl-LWP-Protocol-https
+        - make -C /tmp/kanku install
+        - /usr/bin/ddnss-update
