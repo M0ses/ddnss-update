@@ -91,7 +91,7 @@ sub update_ddnss_records {
   my ($config, $curr_ips) = @_;
   my $url = "$config->{UPDATE_URL}?key=$config->{KEYAUTH}&host=$config->{HOSTNAME}";
   $url = "$url&ip=$curr_ips->{ipv4}"  if $curr_ips->{ipv4};
-  $url = "$url&ip6=$curr_ips->{ipv4}" if $curr_ips->{ipv6};
+  $url = "$url&ip6=$curr_ips->{ipv6}" if $curr_ips->{ipv6};
   my $ua = LWP::UserAgent->new;
   logmsg("Using URL to UPDATE: '$url'", 5);
   my $response = $ua->get($url);
