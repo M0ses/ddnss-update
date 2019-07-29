@@ -224,6 +224,11 @@ sub get_last_ip {
 
 sub set_last_ip {
   my ($version, $ip) = @_;
+  my $dir = $config->{WORKING_DIR};
+  unless(-e $dir or mkdir $dir) {
+    logmsg("Unable to create $dir");
+    return;
+  }
   my $file = "$config->{WORKING_DIR}/lastip.v$version";
   my $fh;
   if (!open($fh, '>', $file)) {
