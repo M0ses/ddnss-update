@@ -1,7 +1,7 @@
 #
 # spec file for package ddnss-update
 #
-# Copyright (c) 2017 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2020 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -12,33 +12,29 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
-#
+# Please submit bugfixes or comments via https://bugs.opensuse.org/
 
 Name:           ddnss-update
-Version:	0.0.1
-Release:	0.0
-License:	GPL
+Version:	0.0.4
+Release:	0
+License:	GPL-3.0-only
 Summary:	Update script for ddnss.de
-Url:		https://github.com/M0ses/ddnss-update
+URL:		https://github.com/M0ses/ddnss-update
 Group:		Productivity/Networking/DNS/Utilities
-Source:		%{name}-%{version}.tar.xz
-#Patch:
-#BuildRequires:
-#PreReq:
-#Provides:
-Requires:	curl
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-BuildRequires: shadow
-Requires: shadow
-BuildRequires: systemd-rpm-macros
-Requires: perl(Config::General)
-Requires: perl(LWP::UserAgent)
-Requires: perl(LWP::Protocol::https)
+Source:		https://github.com/M0ses/ddnss-update/archive/%{version}/%{name}-%{version}.tar.gz
+Source99:	%{name}-rpmlintrc
+BuildRequires:	shadow
+BuildRequires:	systemd-rpm-macros
+Requires:	shadow
+Requires:	perl(Config::General)
+Requires:	perl(LWP::Protocol::https)
+Requires:	perl(LWP::UserAgent)
+BuildArch:	noarch
+
 %{?systemd_requires}
 
 %description
-update script for ddnss.de 
+Script to update ddnss.de records.
 
 %prep
 %setup -q
@@ -46,30 +42,39 @@ update script for ddnss.de
 %build
 
 %install
-make install DESTDIR=%{buildroot} %{?_smp_mflags}
+%make_install
+mkdir -p %{buildroot}%{_sbindir}
+ln -s %{_sbindir}/service %{buildroot}%{_sbindir}/rcddnss-update
 
 %pre
-id ddnss 2>/dev/null || useradd -r -m -d /var/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
+id ddnss 2>/dev/null || useradd -r -m -d %{_localstatedir}/lib/ddnss -c "User for updating ddnss.de records" -s /bin/bash ddnss
+%service_add_pre ddnss-update.service
 %service_add_pre ddnss-update.timer
 
 %post
+%service_add_post ddnss-update.service
 %service_add_post ddnss-update.timer
 
 %preun
+%service_del_preun ddnss-update.service
 %service_del_preun ddnss-update.timer
 
 %postun
+%service_del_postun ddnss-update.service
 %service_del_postun ddnss-update.timer
 
 %files
-%defattr(-,root,root)
-%doc README.md LICENSE
-%dir /etc/ddnss/
-%config (noreplace) /etc/ddnss/ddnss-update.rc
-/usr/bin/ddnss-update
-%dir %attr(0755,ddnss,users) %ghost /var/lib/ddnss
-%ghost /var/lib/ddnss/last.ip
-%dir %attr(0755,ddnss,users) /var/log/ddnss
-%ghost /var/log/ddnss/ddnss-update.log
+%license LICENSE
+%doc README.md
+%dir %{_sysconfdir}/ddnss/
+%config(noreplace) %{_sysconfdir}/ddnss/ddnss-update.rc
+%{_bindir}/ddnss-update
+%dir %attr(0755,ddnss,users) %ghost %{_localstatedir}/lib/ddnss
+%ghost %{_localstatedir}/lib/ddnss/last.ip
+%dir %attr(0755,ddnss,users) %{_localstatedir}/log/ddnss
+%ghost %{_localstatedir}/log/ddnss/ddnss-update.log
 %{_unitdir}/ddnss-update.service
 %{_unitdir}/ddnss-update.timer
+%{_sbindir}/rcddnss-update
+
+%changelog
