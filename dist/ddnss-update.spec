@@ -22,7 +22,6 @@ Summary:	Update script for ddnss.de
 URL:		https://github.com/M0ses/ddnss-update
 Group:		Productivity/Networking/DNS/Utilities
 Source:		https://github.com/M0ses/ddnss-update/archive/%{version}/%{name}-%{version}.tar.gz
-Source99:	%{name}-rpmlintrc
 BuildRequires:	shadow
 BuildRequires:	systemd-rpm-macros
 Requires:	shadow
