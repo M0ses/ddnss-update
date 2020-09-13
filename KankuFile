@@ -2,7 +2,6 @@
 Kanku::Util::IPTables:
   start_port: 49001
 
-
 domain_name: ddnss-update
 default_job: kanku-job
 login_user: root
@@ -49,5 +48,39 @@ jobs:
         - zypper ref -s
         - zypper -n up
         - zypper -n in make perl-Config-General perl-libwww-perl perl-LWP-Protocol-https
+        - make -C /tmp/kanku install
+        - /usr/bin/ddnss-update
+ ubuntu:
+  -
+    use_module: Kanku::Handler::SetJobContext
+    options:
+      host_interface: eth0
+  -
+    use_module: Kanku::Handler::OBSCheck
+    options:
+      project: devel:kanku:images
+      package: ubuntu-focal
+      repository: images_ubuntu
+  -
+    use_module: Kanku::Handler::ImageDownload
+    options:
+      use_cache: 1
+
+  -
+    use_module: Kanku::Handler::CreateDomain
+    options:
+      memory: 2G
+      vcpu: 1
+      use_9p: 1
+      #forward_port_list: tcp:22,tcp:443
+  -
+    use_module: Kanku::Handler::PrepareSSH
+  -
+    use_module: Kanku::Handler::ExecuteCommandViaSSH
+    options:
+      commands:
+        - echo "deb http://archive.ubuntu.com/ubuntu focal main" >> /etc/apt/sources.list
+        - apt-get update
+        - apt-get install -y make libwww-perl libconfig-general-perl
         - make -C /tmp/kanku install
         - /usr/bin/ddnss-update
